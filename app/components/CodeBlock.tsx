@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Copy, Check, Terminal, FileCode, Settings } from "lucide-react";
 import { useTheme } from "./ThemeProvider";
 
@@ -10,6 +10,7 @@ interface CodeBlockProps {
   code: string;
   type?: BlockType;
   label?: string;
+  editable?: boolean;
 }
 
 const typeConfig: Record<BlockType, { label: string; icon: React.ReactNode }> = {
@@ -27,13 +28,23 @@ const typeConfig: Record<BlockType, { label: string; icon: React.ReactNode }> = 
   },
 };
 
-export function CodeBlock({ code, type = "prompt", label }: CodeBlockProps) {
+export function CodeBlock({
+  code,
+  type = "prompt",
+  label,
+  editable = true,
+}: CodeBlockProps) {
   const [copied, setCopied] = useState(false);
+  const [draft, setDraft] = useState(code);
   const { theme } = useTheme();
   const dark = theme === "dark";
 
+  useEffect(() => {
+    setDraft(code);
+  }, [code]);
+
   const handleCopy = async () => {
-    await navigator.clipboard.writeText(code);
+    await navigator.clipboard.writeText(editable ? draft : code);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
@@ -43,32 +54,26 @@ export function CodeBlock({ code, type = "prompt", label }: CodeBlockProps) {
 
   return (
     <div className="my-6 group">
-      <div
-        className="flex items-center gap-1.5 mb-2"
-        style={{ color: dark ? "#8A8A92" : "#71717A" }}
-      >
-        <span style={{ color: "#6366F1" }}>{icon}</span>
-        <span className="text-xs font-medium tracking-wide uppercase" style={{ fontFamily: "Inter, sans-serif", letterSpacing: "0.08em" }}>
+      <div className="mb-2 flex items-center gap-1.5 text-slate-500 dark:text-slate-400">
+        <span className="text-indigo-500 dark:text-indigo-400">{icon}</span>
+        <span
+          className="text-xs font-medium uppercase"
+          style={{ fontFamily: "var(--font-sans)", letterSpacing: "0.08em" }}
+        >
           {displayLabel}
         </span>
+        {editable && (
+          <span className="ml-2 text-[11px] text-slate-400 dark:text-slate-500">
+            Edit in place before copying
+          </span>
+        )}
       </div>
-      <div
-        className="relative rounded-lg border-l-[3px]"
-        style={{
-          borderLeftColor: "#6366F1",
-          backgroundColor: dark ? "#1E1E24" : "#F4F4F8",
-          border: `1px solid ${dark ? "#2A2A32" : "#E4E4E7"}`,
-          borderLeft: "3px solid #6366F1",
-        }}
-      >
+      <div className="relative rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-sm overflow-hidden">
         <button
           onClick={handleCopy}
           aria-label={copied ? "Copied!" : "Copy code"}
-          className="absolute top-3 right-3 flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-medium transition-all duration-200 opacity-0 group-hover:opacity-100 focus-visible:opacity-100"
-          style={{
-            backgroundColor: dark ? "#2A2A32" : "#E4E4E7",
-            color: copied ? "#22c55e" : dark ? "#8A8A92" : "#71717A",
-          }}
+          className="absolute right-3 top-3 flex items-center gap-1.5 rounded-full px-2.5 py-1.5 text-xs font-medium transition-all duration-200 opacity-0 group-hover:opacity-100 focus-visible:opacity-100 bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200"
+          style={{ color: copied ? "#22c55e" : undefined }}
         >
           {copied ? (
             <>
@@ -82,19 +87,23 @@ export function CodeBlock({ code, type = "prompt", label }: CodeBlockProps) {
             </>
           )}
         </button>
-        <pre
-          className="code-block overflow-x-auto p-5 text-sm leading-relaxed"
-          style={{
-            color: dark ? "#E8E8EA" : "#18181B",
-            fontFamily: "'JetBrains Mono', Menlo, monospace",
-            lineHeight: "1.75",
-            margin: 0,
-            whiteSpace: "pre-wrap",
-            wordBreak: "break-word",
-          }}
-        >
-          <code>{code}</code>
-        </pre>
+        {editable ? (
+          <textarea
+            aria-label={displayLabel}
+            value={draft}
+            onChange={(e) => setDraft(e.currentTarget.value)}
+            spellCheck={false}
+            className="code-block min-h-[280px] w-full resize-y bg-transparent p-5 pr-20 text-sm leading-relaxed md:p-6 md:pr-24 text-slate-800 dark:text-slate-200"
+            style={{ lineHeight: "1.9" }}
+          />
+        ) : (
+          <pre
+            className="code-block overflow-x-auto p-5 text-sm leading-relaxed md:p-6 text-slate-800 dark:text-slate-200"
+            style={{ lineHeight: "1.9", margin: 0, whiteSpace: "pre-wrap", wordBreak: "break-word" }}
+          >
+            <code>{code}</code>
+          </pre>
+        )}
       </div>
     </div>
   );

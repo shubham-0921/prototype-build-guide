@@ -10,19 +10,35 @@ const ThemeContext = createContext<{
   toggle: () => void;
   mode: Mode;
   setMode: (m: Mode) => void;
-}>({ theme: "dark", toggle: () => {}, mode: "desktop", setMode: () => {} });
+  projectName: string;
+  setProjectName: (v: string) => void;
+  githubUsername: string;
+  setGithubUsername: (v: string) => void;
+}>({
+  theme: "light",
+  toggle: () => {},
+  mode: "desktop",
+  setMode: () => {},
+  projectName: "feedback-collector",
+  setProjectName: () => {},
+  githubUsername: "",
+  setGithubUsername: () => {},
+});
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const [theme, setTheme] = useState<Theme>("dark");
+  const [theme, setTheme] = useState<Theme>("light");
   const [mode, setMode] = useState<Mode>("desktop");
+  const [projectName, setProjectNameState] = useState("feedback-collector");
+  const [githubUsername, setGithubUsernameState] = useState("");
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
     setMounted(true);
-    const stored = localStorage.getItem("theme") as Theme | null;
-    if (stored === "light" || stored === "dark") {
-      setTheme(stored);
-    }
+    localStorage.removeItem("theme");
+    const storedProject = localStorage.getItem("projectName");
+    if (storedProject) setProjectNameState(storedProject);
+    const storedUsername = localStorage.getItem("githubUsername");
+    if (storedUsername) setGithubUsernameState(storedUsername);
   }, []);
 
   useEffect(() => {
@@ -30,24 +46,27 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     const root = document.documentElement;
     if (theme === "dark") {
       root.classList.add("dark");
-      root.classList.remove("light");
-      document.body.style.backgroundColor = "#0A0A0B";
-      document.body.style.color = "#E8E8EA";
     } else {
-      root.classList.add("light");
       root.classList.remove("dark");
-      document.body.style.backgroundColor = "#FAFAFA";
-      document.body.style.color = "#18181B";
     }
-    localStorage.setItem("theme", theme);
   }, [theme, mounted]);
 
   const toggle = () => setTheme((t) => (t === "dark" ? "light" : "dark"));
 
+  const setProjectName = (v: string) => {
+    setProjectNameState(v);
+    localStorage.setItem("projectName", v);
+  };
+
+  const setGithubUsername = (v: string) => {
+    setGithubUsernameState(v);
+    localStorage.setItem("githubUsername", v);
+  };
+
   if (!mounted) return <div style={{ visibility: "hidden" }}>{children}</div>;
 
   return (
-    <ThemeContext.Provider value={{ theme, toggle, mode, setMode }}>
+    <ThemeContext.Provider value={{ theme, toggle, mode, setMode, projectName, setProjectName, githubUsername, setGithubUsername }}>
       {children}
     </ThemeContext.Provider>
   );
